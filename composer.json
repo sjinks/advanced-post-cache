@@ -17,5 +17,12 @@
 	},
 	"require": {
 		"composer/installers": "~1.0"
+	},
+	"require-dev": {
+		"automattic/vipwpcs": "^2.3",
+		"php-stubs/wordpress-stubs": "^5.8",
+		"phpcompatibility/phpcompatibility-wp": "^2.1",
+		"vimeo/psalm": "^4.9",
+		"johnpbloch/wordpress-core": "^5.8"
 	}
 }
