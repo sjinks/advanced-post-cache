@@ -11,37 +11,72 @@ Author URI: http://automattic.com/
 class Advanced_Post_Cache {
 	const CACHE_GROUP_PREFIX = 'advanced_post_cache_';
 
-	// Flag for temp (within one page load) turning invalidations on and off
-	// @see dont_clear_advanced_post_cache()
-	// @see do_clear_advanced_post_cache()
-	// Used to prevent invalidation during new comment
-	public bool $do_flush_cache = true;
-
-	// Flag for preventing multiple invalidations in a row: clean_post_cache() calls itself recursively for post children.
-	public bool $need_to_flush_cache = true; // Currently disabled
+	/**
+	 * Flag for temp (within one page load) turning invalidations on and off. Used to prevent invalidation during new comment.
+	 *
+	 * @see dont_clear_advanced_post_cache()
+	 * @see do_clear_advanced_post_cache()
+	 *
+	 * @var bool
+	 */
+	public $do_flush_cache = true;
 
 	/* Per cache-clear data */
-	private int $cache_incr     = 0; // Increments the cache group (advanced_post_cache_0, advanced_post_cache_1, ...)
-	private string $cache_group = ''; // CACHE_GROUP_PREFIX . $cache_incr
+	/**
+	 * Increments the cache group (advanced_post_cache_0, advanced_post_cache_1, ...)
+	 *
+	 * @var int
+	 */
+	private $cache_incr = 0;
+
+	/**
+	 * CACHE_GROUP_PREFIX . $cache_incr
+	 *
+	 * @var string
+	 */
+	private $cache_group = '';
 
 	/* Per query data */
-	private string $cache_key = ''; // md5 of current SQL query
-	/** @var bool|array */
-	private $all_post_ids          = false; // IDs of all posts current SQL query returns
-	private array $cached_post_ids = [];    // subset of $all_post_ids whose posts are currently in cache
-	private array $cached_posts    = [];
-	/** @var bool|string */
-	private $found_posts = false; // The result of the FOUND_ROWS() query
+	/**
+	 * md5 of current SQL query
+	 *
+	 * @var string
+	 */
+	private $cache_key = '';
 
-	/** var callable */
-	private string $cache_func = 'wp_cache_add'; // Turns to set if there seems to be inconsistencies
+	/**
+	 * IDs of all posts current SQL query returns
+	 *
+	 * @var bool|array
+	 */
+	private $all_post_ids = false;
+
+	/**
+	 * subset of $all_post_ids whose posts are currently in cache
+	 *
+	 * @var array
+	 */
+	private $cached_post_ids = [];
+
+	/** @var array */
+	private $cached_posts = [];
+
+	/**
+	 * The result of the FOUND_ROWS() query
+	 *
+	 * @var bool|string
+	 */
+	private $found_posts = false;
+
+	/**
+	 * Turns to set if there seems to be inconsistencies
+	 *
+	 * @var callable
+	 * @psalm-var callable-string
+	 */
+	private $cache_func = 'wp_cache_add';
 
 	public function __construct() {
-		// Specific to certain Memcached Object Cache plugins
-		if ( function_exists( 'wp_cache_add_group_prefix_map' ) ) {
-			wp_cache_add_group_prefix_map( self::CACHE_GROUP_PREFIX, 'advanced_post_cache' );
-		}
-
 		$this->setup_for_blog();
 
 		add_action( 'switch_blog', [ $this, 'setup_for_blog' ], 10, 2 );
@@ -70,6 +105,7 @@ class Advanced_Post_Cache {
 			wp_cache_set( 'advanced_post_cache', $now, 'cache_incrementors' );
 			$this->cache_incr = $now;
 		}
+
 		$this->cache_group = self::CACHE_GROUP_PREFIX . $this->cache_incr;
 	}
 
@@ -94,36 +130,31 @@ class Advanced_Post_Cache {
 			return;
 		}
 
-		// We already flushed once this page load, and have not put anything into the cache since.
-		// OTHER processes may have put something into the cache!  In theory, this could cause stale caches.
-		// We do this since clean_post_cache() (which fires the action this method attaches to) is called RECURSIVELY for all descendants.
-		//      if ( !$this->need_to_flush_cache )
-		//          return;
-
-		$this->cache_incr = (int) wp_cache_incr( 'advanced_post_cache', 1, 'cache_incrementors' );
-		if ( 10 < strlen( (string) $this->cache_incr ) ) {
+		$incrementor = wp_cache_incr( 'advanced_post_cache', 1, 'cache_incrementors' );
+		if ( false === $incrementor || 10 < strlen( (string) $this->cache_incr ) ) {
 			wp_cache_set( 'advanced_post_cache', 0, 'cache_incrementors' );
 			$this->cache_incr = 0;
+		} else {
+			$this->cache_incr = $incrementor;
 		}
-		$this->cache_group         = self::CACHE_GROUP_PREFIX . (string) $this->cache_incr;
-		$this->need_to_flush_cache = false;
-	}
 
+		$this->cache_group = self::CACHE_GROUP_PREFIX . (string) $this->cache_incr;
+	}
 
 	/* Cache Reading/Priming Functions */
 
 	/**
 	 * Determines (by hash of SQL) if query is cached.
-	 * If cached: Return query of needed post IDs.
+	 * If cached: Returns query of needed post IDs.
 	 * Otherwise: Returns query unchanged.
-	 * 
+	 *
 	 * @param string   $sql     The complete SQL query.
 	 * @param WP_Query $query   The WP_Query instance (passed by reference).
 	 * @return string
 	 * @global wpdb $wpdb
 	 */
 	public function posts_request( $sql, $query ) {
-		/** @var wpdb */
+		/** @var wpdb $wpdb */
 		global $wpdb;
 
 		if ( apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
@@ -147,7 +178,7 @@ class Advanced_Post_Cache {
 
 		// Query is cached
 		if ( $this->found_posts && is_array( $this->all_post_ids ) ) {
-			$this->cached_posts = wp_cache_get_multiple( [ 'posts' => $this->all_post_ids ] );
+			$this->cached_posts = wp_cache_get_multiple( $this->all_post_ids, 'posts' );
 
 			if ( ! empty( $this->cached_posts ) ) {
 				$this->cached_posts = array_filter( $this->cached_posts );
@@ -160,10 +191,9 @@ class Advanced_Post_Cache {
 			}
 			$uncached_post_ids = array_diff( $this->all_post_ids, $this->cached_post_ids );
 
-			if ( $uncached_post_ids ) {
-				return "SELECT * FROM $wpdb->posts WHERE ID IN(" . join( ',', array_map( 'absint', $uncached_post_ids ) ) . ')';
-			}
-			return '';
+			$sql = $uncached_post_ids
+				? "SELECT * FROM $wpdb->posts WHERE ID IN(" . join( ',', array_map( 'absint', $uncached_post_ids ) ) . ')'
+				: '';
 		}
 
 		return $sql;
@@ -172,7 +202,7 @@ class Advanced_Post_Cache {
 	/**
 	 * If cached: Collates posts returned by SQL query with posts that are already cached.  Orders correctly.
 	 * Otherwise: Primes cache with data for current posts WP_Query.
-	 * 
+	 *
 	 * @param WP_Post[] $posts Array of post objects.
 	 * @param WP_Query  $query The WP_Query instance (passed by reference).
 	 * @return WP_Post[]
@@ -205,19 +235,20 @@ class Advanced_Post_Cache {
 		}
 
 		if ( ! $post_ids ) {
-			return [];
+			$result = [];
+		} else {
+			( $this->cache_func )( $this->cache_key, $post_ids, $this->cache_group );
+
+			/** @var list<WP_Post> */
+			$result = array_map( 'get_post', $posts );
 		}
 
-		call_user_func( $this->cache_func, $this->cache_key, $post_ids, $this->cache_group );
-		$this->need_to_flush_cache = true;
-
-		/** @var list<WP_Post> */
-		return array_map( 'get_post', $posts );
+		return $result;
 	}
 
 	/**
-	 * If $limits is empty, WP_Query never calls the found_rows stuff, so we set $this->found_rows to 'NA'
-	 * 
+	 * If $limits is empty, WP_Query never calls the found_rows stuff, so we set $this->found_posts to 'NO_LIMITS'
+	 *
 	 * @param string   $limits The LIMIT clause of the query.
 	 * @param WP_Query $query  The WP_Query instance (passed by reference).
 	 * @return string
@@ -230,17 +261,19 @@ class Advanced_Post_Cache {
 		if ( ! empty( $query->query_vars['no_found_rows'] ) ) {
 			$this->found_posts = 'NO_FOUND_ROWS';
 		} elseif ( empty( $limits ) ) {
+			// This happens when `nopaging` is set to `true`
 			$this->found_posts = 'NO_LIMITS';
 		} else {
 			$this->found_posts = false; // re-init
 		}
+
 		return $limits;
 	}
 
 	/**
 	 * If cached: Blanks SELECT FOUND_ROWS() query.  This data is already stored in cache.
 	 * Otherwise: Returns query unchanged.
-	 * 
+	 *
 	 * @param string   $sql      The query to run to find the found posts.
 	 * @param WP_Query $query    The WP_Query instance (passed by reference).
 	 * @return string
@@ -259,7 +292,7 @@ class Advanced_Post_Cache {
 	/**
 	 * If cached: Returns cached result of FOUND_ROWS() query.
 	 * Otherwise: Returs result unchanged
-	 * 
+	 *
 	 * @param int      $found_posts The number of posts found.
 	 * @param WP_Query $query       The WP_Query instance (passed by reference).
 	 * @return int
@@ -273,32 +306,37 @@ class Advanced_Post_Cache {
 			return (int) $this->found_posts;
 		}
 
-		call_user_func( $this->cache_func, "{$this->cache_key}_found", $found_posts, $this->cache_group );
-		$this->need_to_flush_cache = true;
+		( $this->cache_func )( "{$this->cache_key}_found", $found_posts, $this->cache_group );
 
 		return $found_posts;
 	}
 }
 
-$GLOBALS['advanced_post_cache_object'] = new Advanced_Post_Cache();
+if ( defined( 'ABSPATH' ) ) {
+	$GLOBALS['advanced_post_cache_object'] = new Advanced_Post_Cache();
 
-function clear_advanced_post_cache(): void {
-	global $advanced_post_cache_object;
-	$advanced_post_cache_object->flush_cache();
+	function clear_advanced_post_cache(): void {
+		global $advanced_post_cache_object;
+		$advanced_post_cache_object->flush_cache();
+	}
+
+	function do_clear_advanced_post_cache(): void {
+		$GLOBALS['advanced_post_cache_object']->do_flush_cache = true;
+	}
+
+	function dont_clear_advanced_post_cache(): void {
+		$GLOBALS['advanced_post_cache_object']->do_flush_cache = false;
+	}
+
+	add_action( 'clean_term_cache', 'clear_advanced_post_cache' );
+	add_action( 'clean_post_cache', 'clear_advanced_post_cache' );
+
+	add_action( 'added_post_meta', 'clear_advanced_post_cache' );
+	add_action( 'updated_post_meta', 'clear_advanced_post_cache' );
+	add_action( 'delete_post_meta', 'clear_advanced_post_cache' );
+
+	// Don't clear Advanced Post Cache for a new comment - temp core hack
+	// http://core.trac.wordpress.org/ticket/15565
+	add_action( 'wp_updating_comment_count', 'dont_clear_advanced_post_cache' );
+	add_action( 'wp_update_comment_count', 'do_clear_advanced_post_cache' );
 }
-
-function do_clear_advanced_post_cache(): void {
-	$GLOBALS['advanced_post_cache_object']->do_flush_cache = true;
-}
-
-function dont_clear_advanced_post_cache(): void {
-	$GLOBALS['advanced_post_cache_object']->do_flush_cache = false;
-}
-
-add_action( 'clean_term_cache', 'clear_advanced_post_cache' );
-add_action( 'clean_post_cache', 'clear_advanced_post_cache' );
-
-// Don't clear Advanced Post Cache for a new comment - temp core hack
-// http://core.trac.wordpress.org/ticket/15565
-add_action( 'wp_updating_comment_count', 'dont_clear_advanced_post_cache' );
-add_action( 'wp_update_comment_count', 'do_clear_advanced_post_cache' );
