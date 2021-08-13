@@ -35,6 +35,7 @@ jobs:
         uses: shivammathur/setup-php@2.12.0
         with:
           php-version: ${{ matrix.php }}
+          tools: phpunit/phpunit:^7
 
       - name: Get composer cache directory
         id: composer-cache
@@ -67,6 +68,6 @@ jobs:
         run: ./.github/install-wp-tests.sh wordpress_test root root 127.0.0.1:${{ job.services.mysql.ports[3306] }} ${{ matrix.wordpress }}
 
       - name: Run tests
-        run: vendor/bin/phpunit
+        run: phpunit
         env:
           WP_MULTISITE: ${{ matrix.wpmu }}
