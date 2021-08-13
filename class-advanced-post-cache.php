@@ -18,10 +18,6 @@ class Advanced_Post_Cache {
 	/** @var bool */
 	public $do_flush_cache = true;
 
-	// Flag for preventing multiple invalidations in a row: clean_post_cache() calls itself recursively for post children.
-	/** @var bool */
-	public $need_to_flush_cache = true; // Currently disabled
-
 	/* Per cache-clear data */
 	/** @var int */
 	private $cache_incr = 0; // Increments the cache group (advanced_post_cache_0, advanced_post_cache_1, ...)
@@ -96,27 +92,22 @@ class Advanced_Post_Cache {
 			return;
 		}
 
-		// We already flushed once this page load, and have not put anything into the cache since.
-		// OTHER processes may have put something into the cache!  In theory, this could cause stale caches.
-		// We do this since clean_post_cache() (which fires the action this method attaches to) is called RECURSIVELY for all descendants.
-		//      if ( !$this->need_to_flush_cache )
-		//          return;
-
-		$this->cache_incr = (int) wp_cache_incr( 'advanced_post_cache', 1, 'cache_incrementors' );
-		if ( 10 < strlen( (string) $this->cache_incr ) ) {
+		$incrementor = wp_cache_incr( 'advanced_post_cache', 1, 'cache_incrementors' );
+		if ( false === $incrementor || 10 < strlen( (string) $this->cache_incr ) ) {
 			wp_cache_set( 'advanced_post_cache', 0, 'cache_incrementors' );
 			$this->cache_incr = 0;
+		} else {
+			$this->cache_incr = $incrementor;
 		}
-		$this->cache_group         = self::CACHE_GROUP_PREFIX . (string) $this->cache_incr;
-		$this->need_to_flush_cache = false;
-	}
 
+		$this->cache_group = self::CACHE_GROUP_PREFIX . (string) $this->cache_incr;
+	}
 
 	/* Cache Reading/Priming Functions */
 
 	/**
 	 * Determines (by hash of SQL) if query is cached.
-	 * If cached: Return query of needed post IDs.
+	 * If cached: Returns query of needed post IDs.
 	 * Otherwise: Returns query unchanged.
 	 * 
 	 * @param string   $sql     The complete SQL query.
@@ -162,10 +153,9 @@ class Advanced_Post_Cache {
 			}
 			$uncached_post_ids = array_diff( $this->all_post_ids, $this->cached_post_ids );
 
-			if ( $uncached_post_ids ) {
-				return "SELECT * FROM $wpdb->posts WHERE ID IN(" . join( ',', array_map( 'absint', $uncached_post_ids ) ) . ')';
-			}
-			return '';
+			$sql = $uncached_post_ids
+				? "SELECT * FROM $wpdb->posts WHERE ID IN(" . join( ',', array_map( 'absint', $uncached_post_ids ) ) . ')'
+				: '';
 		}
 
 		return $sql;
@@ -207,14 +197,15 @@ class Advanced_Post_Cache {
 		}
 
 		if ( ! $post_ids ) {
-			return [];
+			$result = [];
+		} else {
+			call_user_func( $this->cache_func, $this->cache_key, $post_ids, $this->cache_group );
+
+			/** @var list<WP_Post> */
+			$result = array_map( 'get_post', $posts );
 		}
 
-		call_user_func( $this->cache_func, $this->cache_key, $post_ids, $this->cache_group );
-		$this->need_to_flush_cache = true;
-
-		/** @var list<WP_Post> */
-		return array_map( 'get_post', $posts );
+		return $result;
 	}
 
 	/**
@@ -278,7 +269,6 @@ class Advanced_Post_Cache {
 		}
 
 		call_user_func( $this->cache_func, "{$this->cache_key}_found", $found_posts, $this->cache_group );
-		$this->need_to_flush_cache = true;
 
 		return $found_posts;
 	}
@@ -303,9 +293,9 @@ if ( defined( 'ABSPATH' ) ) {
 	add_action( 'clean_term_cache', 'clear_advanced_post_cache' );
 	add_action( 'clean_post_cache', 'clear_advanced_post_cache' );
 
-	add_action( 'add_post_metadata', 'clear_advanced_post_cache' );
-	add_action( 'update_post_metadata', 'clear_advanced_post_cache' );
-	add_action( 'delete_post_metadata', 'clear_advanced_post_cache' );
+	add_action( 'added_post_meta', 'clear_advanced_post_cache' );
+	add_action( 'updated_post_meta', 'clear_advanced_post_cache' );
+	add_action( 'delete_post_meta', 'clear_advanced_post_cache' );
 
 	// Don't clear Advanced Post Cache for a new comment - temp core hack
 	// http://core.trac.wordpress.org/ticket/15565
