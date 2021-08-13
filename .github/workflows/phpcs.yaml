@@ -19,5 +19,8 @@ jobs:
           php-version: "7.4"
           tools: automattic/vipwpcs, phpcompatibility/phpcompatibility-wp
 
+      - name: Add error matcher
+        run: echo "::add-matcher::$(pwd)/.github/checkstyle-problem-matcher.json"
+
       - name: Run style check
-        run: phpcs -s
+        run: phpcs --report=checkstyle
