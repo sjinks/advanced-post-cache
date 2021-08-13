@@ -11,33 +11,70 @@ Author URI: http://automattic.com/
 class Advanced_Post_Cache {
 	const CACHE_GROUP_PREFIX = 'advanced_post_cache_';
 
-	// Flag for temp (within one page load) turning invalidations on and off
-	// @see dont_clear_advanced_post_cache()
-	// @see do_clear_advanced_post_cache()
-	// Used to prevent invalidation during new comment
-	/** @var bool */
+	/**
+	 * Flag for temp (within one page load) turning invalidations on and off. Used to prevent invalidation during new comment.
+	 *
+	 * @see dont_clear_advanced_post_cache()
+	 * @see do_clear_advanced_post_cache()
+	 *
+	 * @var bool
+	 */
 	public $do_flush_cache = true;
 
 	/* Per cache-clear data */
-	/** @var int */
-	private $cache_incr = 0; // Increments the cache group (advanced_post_cache_0, advanced_post_cache_1, ...)
-	/** @var string */
-	private $cache_group = ''; // CACHE_GROUP_PREFIX . $cache_incr
+	/**
+	 * Increments the cache group (advanced_post_cache_0, advanced_post_cache_1, ...)
+	 *
+	 * @var int
+	 */
+	private $cache_incr = 0;
+
+	/**
+	 * CACHE_GROUP_PREFIX . $cache_incr
+	 *
+	 * @var string
+	 */
+	private $cache_group = '';
 
 	/* Per query data */
-	/** @var string */
-	private $cache_key = ''; // md5 of current SQL query
-	/** @var bool|array */
-	private $all_post_ids = false; // IDs of all posts current SQL query returns
-	/** @var array */
-	private $cached_post_ids = [];    // subset of $all_post_ids whose posts are currently in cache
+	/**
+	 * md5 of current SQL query
+	 *
+	 * @var string
+	 */
+	private $cache_key = '';
+
+	/**
+	 * IDs of all posts current SQL query returns
+	 *
+	 * @var bool|array
+	 */
+	private $all_post_ids = false;
+
+	/**
+	 * subset of $all_post_ids whose posts are currently in cache
+	 *
+	 * @var array
+	 */
+	private $cached_post_ids = [];
+
 	/** @var array */
 	private $cached_posts = [];
-	/** @var bool|string */
-	private $found_posts = false; // The result of the FOUND_ROWS() query
 
-	/** @var callable */
-	private $cache_func = 'wp_cache_add'; // Turns to set if there seems to be inconsistencies
+	/**
+	 * The result of the FOUND_ROWS() query
+	 *
+	 * @var bool|string
+	 */
+	private $found_posts = false;
+
+	/**
+	 * Turns to set if there seems to be inconsistencies
+	 *
+	 * @var callable
+	 * @psalm-var callable-string
+	 */
+	private $cache_func = 'wp_cache_add';
 
 	public function __construct() {
 		$this->setup_for_blog();
@@ -68,6 +105,7 @@ class Advanced_Post_Cache {
 			wp_cache_set( 'advanced_post_cache', $now, 'cache_incrementors' );
 			$this->cache_incr = $now;
 		}
+
 		$this->cache_group = self::CACHE_GROUP_PREFIX . $this->cache_incr;
 	}
 
@@ -109,14 +147,14 @@ class Advanced_Post_Cache {
 	 * Determines (by hash of SQL) if query is cached.
 	 * If cached: Returns query of needed post IDs.
 	 * Otherwise: Returns query unchanged.
-	 * 
+	 *
 	 * @param string   $sql     The complete SQL query.
 	 * @param WP_Query $query   The WP_Query instance (passed by reference).
 	 * @return string
 	 * @global wpdb $wpdb
 	 */
 	public function posts_request( $sql, $query ) {
-		/** @var wpdb */
+		/** @var wpdb $wpdb */
 		global $wpdb;
 
 		if ( apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
@@ -164,7 +202,7 @@ class Advanced_Post_Cache {
 	/**
 	 * If cached: Collates posts returned by SQL query with posts that are already cached.  Orders correctly.
 	 * Otherwise: Primes cache with data for current posts WP_Query.
-	 * 
+	 *
 	 * @param WP_Post[] $posts Array of post objects.
 	 * @param WP_Query  $query The WP_Query instance (passed by reference).
 	 * @return WP_Post[]
@@ -199,7 +237,7 @@ class Advanced_Post_Cache {
 		if ( ! $post_ids ) {
 			$result = [];
 		} else {
-			call_user_func( $this->cache_func, $this->cache_key, $post_ids, $this->cache_group );
+			($this->cache_func)( $this->cache_key, $post_ids, $this->cache_group );
 
 			/** @var list<WP_Post> */
 			$result = array_map( 'get_post', $posts );
@@ -210,7 +248,7 @@ class Advanced_Post_Cache {
 
 	/**
 	 * If $limits is empty, WP_Query never calls the found_rows stuff, so we set $this->found_posts to 'NO_LIMITS'
-	 * 
+	 *
 	 * @param string   $limits The LIMIT clause of the query.
 	 * @param WP_Query $query  The WP_Query instance (passed by reference).
 	 * @return string
@@ -235,7 +273,7 @@ class Advanced_Post_Cache {
 	/**
 	 * If cached: Blanks SELECT FOUND_ROWS() query.  This data is already stored in cache.
 	 * Otherwise: Returns query unchanged.
-	 * 
+	 *
 	 * @param string   $sql      The query to run to find the found posts.
 	 * @param WP_Query $query    The WP_Query instance (passed by reference).
 	 * @return string
@@ -254,7 +292,7 @@ class Advanced_Post_Cache {
 	/**
 	 * If cached: Returns cached result of FOUND_ROWS() query.
 	 * Otherwise: Returs result unchanged
-	 * 
+	 *
 	 * @param int      $found_posts The number of posts found.
 	 * @param WP_Query $query       The WP_Query instance (passed by reference).
 	 * @return int
@@ -268,7 +306,7 @@ class Advanced_Post_Cache {
 			return (int) $this->found_posts;
 		}
 
-		call_user_func( $this->cache_func, "{$this->cache_key}_found", $found_posts, $this->cache_group );
+		($this->cache_func)( "{$this->cache_key}_found", $found_posts, $this->cache_group );
 
 		return $found_posts;
 	}

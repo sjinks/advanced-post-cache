@@ -105,6 +105,9 @@ class Test_Plugin extends WP_UnitTestCase {
 		];
 	}
 
+	/**
+	 * @see https://github.com/Automattic/advanced-post-cache/issues/14
+	 */
 	public function test_metadata(): void {
 		$params = [
 			'posts_per_page' => 5,
