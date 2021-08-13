@@ -113,7 +113,7 @@ class Test_Plugin extends WP_UnitTestCase {
 			'posts_per_page' => 5,
 			'orderby'        => 'ID',
 			'order'          => 'ASC',
-			'meta_query'     => [
+			'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				[
 					'key'     => 'custom_key_123',
 					'compare' => 'EXISTS',

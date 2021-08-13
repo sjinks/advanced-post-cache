@@ -237,7 +237,7 @@ class Advanced_Post_Cache {
 		if ( ! $post_ids ) {
 			$result = [];
 		} else {
-			($this->cache_func)( $this->cache_key, $post_ids, $this->cache_group );
+			( $this->cache_func )( $this->cache_key, $post_ids, $this->cache_group );
 
 			/** @var list<WP_Post> */
 			$result = array_map( 'get_post', $posts );
@@ -306,7 +306,7 @@ class Advanced_Post_Cache {
 			return (int) $this->found_posts;
 		}
 
-		($this->cache_func)( "{$this->cache_key}_found", $found_posts, $this->cache_group );
+		( $this->cache_func )( "{$this->cache_key}_found", $found_posts, $this->cache_group );
 
 		return $found_posts;
 	}
