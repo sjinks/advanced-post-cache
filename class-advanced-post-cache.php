@@ -81,7 +81,7 @@ class Advanced_Post_Cache {
 
 		add_action( 'switch_blog', [ $this, 'setup_for_blog' ], 10, 2 );
 
-		add_filter( 'posts_request', [ $this, 'posts_request' ], 10, 2 ); // Short circuits if cached
+		add_filter( 'posts_request', [ $this, 'posts_request' ], 999, 2 ); // Short circuits if cached
 		add_filter( 'posts_results', [ $this, 'posts_results' ], 10, 2 ); // Collates if cached, primes cache if not
 
 		add_filter( 'post_limits_request', [ $this, 'post_limits_request' ], 999, 2 ); // Checks to see if we need to worry about found_posts
@@ -181,12 +181,12 @@ class Advanced_Post_Cache {
 			$this->cached_posts = wp_cache_get_multiple( $this->all_post_ids, 'posts' );
 
 			if ( ! empty( $this->cached_posts ) ) {
-				$this->cached_posts = array_filter( $this->cached_posts );
+				$this->cached_posts = array_filter( $this->cached_posts, function ( $post ) {
+					return is_object( $post ) && ! empty( $post->ID );
+				} );
 
 				foreach ( $this->cached_posts as $post ) {
-					if ( ! empty( $post ) ) {
-						$this->cached_post_ids[] = $post->ID;
-					}
+					$this->cached_post_ids[] = $post->ID;
 				}
 			}
 			$uncached_post_ids = array_diff( $this->all_post_ids, $this->cached_post_ids );
