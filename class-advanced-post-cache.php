@@ -47,18 +47,18 @@ class Advanced_Post_Cache {
 	/**
 	 * IDs of all posts current SQL query returns
 	 *
-	 * @var bool|array
+	 * @var bool|int[]
 	 */
 	private $all_post_ids = false;
 
 	/**
 	 * subset of $all_post_ids whose posts are currently in cache
 	 *
-	 * @var array
+	 * @var int[]
 	 */
 	private $cached_post_ids = [];
 
-	/** @var array */
+	/** @var mixed[] */
 	private $cached_posts = [];
 
 	/**
@@ -189,6 +189,7 @@ class Advanced_Post_Cache {
 					$this->cached_post_ids[] = $post->ID;
 				}
 			}
+
 			$uncached_post_ids = array_diff( $this->all_post_ids, $this->cached_post_ids );
 
 			$sql = $uncached_post_ids
@@ -213,6 +214,7 @@ class Advanced_Post_Cache {
 		}
 
 		if ( $this->found_posts && is_array( $this->all_post_ids ) ) { // is cached
+			/** @psalm-var array<object{ID: int}> */
 			$collated_posts = [];
 			foreach ( $this->cached_posts as $post ) {
 				$posts[] = $post;
@@ -224,11 +226,13 @@ class Advanced_Post_Cache {
 					$collated_posts[ $loc ] = $post;
 				}
 			}
+
 			ksort( $collated_posts );
 			/** @var list<WP_Post> */
 			return array_map( 'get_post', array_values( $collated_posts ) );
 		}
 
+		/** @var int[] */
 		$post_ids = [];
 		foreach ( $posts as $post ) {
 			$post_ids[] = $post->ID;
@@ -286,6 +290,7 @@ class Advanced_Post_Cache {
 		if ( $this->found_posts && is_array( $this->all_post_ids ) ) { // is cached
 			return '';
 		}
+
 		return $sql;
 	}
 
