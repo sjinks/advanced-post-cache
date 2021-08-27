@@ -17,11 +17,13 @@ class Test_Plugin extends WP_UnitTestCase {
 		/** @var wpdb $wpdb */
 		global $wpdb;
 
-		$queries_before_all = $wpdb->num_queries;
-		get_post( $this->post_ids[0] );
-		$queries_after_first_getpost = $wpdb->num_queries;
-		get_post( $this->post_ids[0] );
+		$queries_before_all           = $wpdb->num_queries;
+		$query_1                      = new WP_Query( [ 'p' => $this->post_ids[0] ] );
+		$queries_after_first_getpost  = $wpdb->num_queries;
+		$query_2                      = new WP_Query( [ 'p' => $this->post_ids[0] ] );
 		$queries_after_second_getpost = $wpdb->num_queries;
+
+		self::assertEquals( $query_1->posts, $query_2->posts );
 
 		self::assertSame( $queries_after_first_getpost, $queries_after_second_getpost );
 		self::assertGreaterThan( $queries_before_all, $queries_after_first_getpost );
