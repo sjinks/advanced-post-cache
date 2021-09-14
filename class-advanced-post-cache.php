@@ -1,13 +1,5 @@
 <?php
 
-/*
-Plugin Name: Advanced Post Caching
-Description: Cache post queries.
-Version: 0.2
-Author: Automattic
-Author URI: http://automattic.com/
-*/
-
 class Advanced_Post_Cache {
 	const CACHE_GROUP_PREFIX = 'advanced_post_cache_';
 
@@ -81,7 +73,18 @@ class Advanced_Post_Cache {
 	 */
 	private $default_cache_expiration = 3600;
 
-	public function __construct() {
+	/** @var self|null */
+	private static $instance = null;
+
+	public static function instance(): self {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	private function __construct() {
 		$this->setup_for_blog();
 		$this->init();
 	}

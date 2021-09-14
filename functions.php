@@ -1,19 +1,18 @@
 <?php
 
 if ( defined( 'ABSPATH' ) ) {
-	$GLOBALS['advanced_post_cache_object'] = new Advanced_Post_Cache();
+	$GLOBALS['advanced_post_cache_object'] = Advanced_Post_Cache::instance();
 
 	function clear_advanced_post_cache(): void {
-		global $advanced_post_cache_object;
-		$advanced_post_cache_object->flush_cache();
+		Advanced_Post_Cache::instance()->flush_cache();
 	}
 
 	function do_clear_advanced_post_cache(): void {
-		$GLOBALS['advanced_post_cache_object']->do_flush_cache = true;
+		Advanced_Post_Cache::instance()->do_flush_cache = true;
 	}
 
 	function dont_clear_advanced_post_cache(): void {
-		$GLOBALS['advanced_post_cache_object']->do_flush_cache = false;
+		Advanced_Post_Cache::instance()->do_flush_cache = false;
 	}
 
 	add_action( 'clean_term_cache', 'clear_advanced_post_cache' );

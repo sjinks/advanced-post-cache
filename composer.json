@@ -1,19 +1,21 @@
 {
-	"name"       : "automattic/advanced-post-cache",
+	"name": "automattic/advanced-post-cache-reloaded",
 	"description": "Cache post queries for WordPress",
-	"homepage"   : "http://wordpress.org/plugins/advanced-caching/",
-	"type"       : "wordpress-plugin",
-	"license"    : "GPL-2.0+",
-	"authors"    : [
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0+",
+	"authors": [
 		{
-			"name"    : "Automattic",
+			"name": "Automattic",
 			"homepage": "http://automattic.com/"
+		},
+		{
+			"name": "Volodymyr Kolesnykov",
+			"homepage": "https://wildwolf.name/"
 		}
 	],
-	"support"    : {
-			"issues": "https://github.com/Automattic/advanced-post-cache/issues",
-			"source": "https://github.com/Automattic/advanced-post-cache",
-			"forum": "http://wordpress.org/support/plugin/advanced-caching"
+	"support": {
+		"issues": "https://github.com/sjinks/advanced-post-cache/issues",
+		"source": "https://github.com/sjinks/advanced-post-cache"
 	},
 	"require": {
 		"composer/installers": "^1.0 || ^2.0"
