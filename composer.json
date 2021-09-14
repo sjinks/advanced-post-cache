@@ -1,5 +1,5 @@
 {
-	"name": "automattic/advanced-post-cache-reloaded",
+	"name": "wildwolf/advanced-post-cache-reloaded",
 	"description": "Cache post queries for WordPress",
 	"type": "wordpress-plugin",
 	"license": "GPL-2.0+",
