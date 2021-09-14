@@ -83,16 +83,7 @@ class Advanced_Post_Cache {
 
 	public function __construct() {
 		$this->setup_for_blog();
-
-		add_action( 'switch_blog', [ $this, 'setup_for_blog' ], 10, 2 );
-
-		add_filter( 'posts_request', [ $this, 'posts_request' ], 999, 2 ); // Short circuits if cached
-		add_filter( 'posts_results', [ $this, 'posts_results' ], 10, 2 ); // Collates if cached, primes cache if not
-
-		add_filter( 'post_limits_request', [ $this, 'post_limits_request' ], 999, 2 ); // Checks to see if we need to worry about found_posts
-
-		add_filter( 'found_posts_query', [ $this, 'found_posts_query' ], 10, 2 ); // Short circuits if cached
-		add_filter( 'found_posts', [ $this, 'found_posts' ], 10, 2 ); // Reads from cache if cached, primes cache if not
+		$this->init();
 	}
 
 	/**
@@ -112,6 +103,22 @@ class Advanced_Post_Cache {
 		}
 
 		$this->cache_group = self::CACHE_GROUP_PREFIX . $this->cache_incr;
+	}
+
+	private function init(): void {
+		add_action( 'switch_blog', [ $this, 'setup_for_blog' ], 10, 2 );
+
+		add_filter( 'posts_request', [ $this, 'posts_request' ], 999, 2 ); // Short circuits if cached
+		add_filter( 'posts_results', [ $this, 'posts_results' ], 10, 2 ); // Collates if cached, primes cache if not
+
+		add_filter( 'post_limits_request', [ $this, 'post_limits_request' ], 999, 2 ); // Checks to see if we need to worry about found_posts
+
+		add_filter( 'found_posts_query', [ $this, 'found_posts_query' ], 10, 2 ); // Short circuits if cached
+		add_filter( 'found_posts', [ $this, 'found_posts' ], 10, 2 ); // Reads from cache if cached, primes cache if not
+
+		if ( doing_action( 'init' ) ) {
+			do_action( 'advanced_post_cache_initialized', $this );
+		}
 	}
 
 	/* Advanced Post Cache API */
