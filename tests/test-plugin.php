@@ -142,4 +142,17 @@ class Test_Plugin extends WP_UnitTestCase {
 		$query = new WP_Query( $params );
 		self::assertEmpty( $query->posts );
 	}
+
+	public function test_default_expiration_getter_setter(): void {
+		/** @var Advanced_Post_Cache $advanced_post_cache_object */
+		global $advanced_post_cache_object;
+
+		$current = $advanced_post_cache_object->get_default_cache_expiration();
+		$new     = $current + 60;
+
+		$advanced_post_cache_object->set_default_cache_expiration( $new );
+		$actual = $advanced_post_cache_object->get_default_cache_expiration();
+
+		self::assertSame( $new, $actual );
+	}
 }

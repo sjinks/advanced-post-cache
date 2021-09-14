@@ -76,6 +76,11 @@ class Advanced_Post_Cache {
 	 */
 	private $cache_func = 'wp_cache_add';
 
+	/**
+	 * @var int
+	 */
+	private $default_cache_expiration = 3600;
+
 	public function __construct() {
 		$this->setup_for_blog();
 
@@ -193,7 +198,7 @@ class Advanced_Post_Cache {
 			$uncached_post_ids = array_diff( $this->all_post_ids, $this->cached_post_ids );
 
 			$sql = $uncached_post_ids
-				? "SELECT * FROM $wpdb->posts WHERE ID IN(" . join( ',', array_map( 'absint', $uncached_post_ids ) ) . ')'
+				? "SELECT * FROM $wpdb->posts WHERE ID IN (" . join( ',', array_map( 'absint', $uncached_post_ids ) ) . ')'
 				: '';
 		}
 
@@ -241,7 +246,8 @@ class Advanced_Post_Cache {
 		if ( ! $post_ids ) {
 			$result = [];
 		} else {
-			( $this->cache_func )( $this->cache_key, $post_ids, $this->cache_group );
+			$expiration = (int) apply_filters( 'advanced_post_cache_expiration', $this->get_default_cache_expiration() );
+			( $this->cache_func )( $this->cache_key, $post_ids, $this->cache_group, $expiration );
 
 			/** @var list<WP_Post> */
 			$result = array_map( 'get_post', $posts );
@@ -311,37 +317,17 @@ class Advanced_Post_Cache {
 			return (int) $this->found_posts;
 		}
 
-		( $this->cache_func )( "{$this->cache_key}_found", $found_posts, $this->cache_group );
+		$expiration = (int) apply_filters( 'advanced_post_cache_expiration', $this->get_default_cache_expiration() );
+		( $this->cache_func )( "{$this->cache_key}_found", $found_posts, $this->cache_group, $expiration );
 
 		return $found_posts;
 	}
-}
 
-if ( defined( 'ABSPATH' ) ) {
-	$GLOBALS['advanced_post_cache_object'] = new Advanced_Post_Cache();
-
-	function clear_advanced_post_cache(): void {
-		global $advanced_post_cache_object;
-		$advanced_post_cache_object->flush_cache();
+	public function set_default_cache_expiration( int $expiration ): void {
+		$this->default_cache_expiration = $expiration;
 	}
 
-	function do_clear_advanced_post_cache(): void {
-		$GLOBALS['advanced_post_cache_object']->do_flush_cache = true;
+	public function get_default_cache_expiration(): int {
+		return $this->default_cache_expiration;
 	}
-
-	function dont_clear_advanced_post_cache(): void {
-		$GLOBALS['advanced_post_cache_object']->do_flush_cache = false;
-	}
-
-	add_action( 'clean_term_cache', 'clear_advanced_post_cache' );
-	add_action( 'clean_post_cache', 'clear_advanced_post_cache' );
-
-	add_action( 'added_post_meta', 'clear_advanced_post_cache' );
-	add_action( 'updated_post_meta', 'clear_advanced_post_cache' );
-	add_action( 'delete_post_meta', 'clear_advanced_post_cache' );
-
-	// Don't clear Advanced Post Cache for a new comment - temp core hack
-	// http://core.trac.wordpress.org/ticket/15565
-	add_action( 'wp_updating_comment_count', 'dont_clear_advanced_post_cache' );
-	add_action( 'wp_update_comment_count', 'do_clear_advanced_post_cache' );
 }
