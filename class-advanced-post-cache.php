@@ -86,7 +86,7 @@ class Advanced_Post_Cache {
 
 	private function __construct() {
 		$this->setup_for_blog();
-		$this->init();
+		add_action( 'init', [ $this, 'init' ] );
 	}
 
 	/**
@@ -108,7 +108,7 @@ class Advanced_Post_Cache {
 		$this->cache_group = self::CACHE_GROUP_PREFIX . $this->cache_incr;
 	}
 
-	private function init(): void {
+	public function init(): void {
 		add_action( 'switch_blog', [ $this, 'setup_for_blog' ], 10, 2 );
 
 		add_filter( 'posts_request', [ $this, 'posts_request' ], 999, 2 ); // Short circuits if cached
