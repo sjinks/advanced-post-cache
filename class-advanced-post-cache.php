@@ -50,7 +50,10 @@ class Advanced_Post_Cache {
 	 */
 	private $cached_post_ids = [];
 
-	/** @var mixed[] */
+	/** @var int[] */
+	private $uncached_post_ids = [];
+
+	/** @var WP_Post[] */
 	private $cached_posts = [];
 
 	/**
@@ -193,10 +196,15 @@ class Advanced_Post_Cache {
 
 		// Query is cached
 		if ( $this->found_posts && is_array( $this->all_post_ids ) ) {
-			$this->cached_posts = wp_cache_get_multiple( $this->all_post_ids, 'posts' );
+			/**
+			 * @var (WP_Post|false)[]
+			 * @psalm-var array<int, WP_Post|false>
+			 */
+			$posts = wp_cache_get_multiple( $this->all_post_ids, 'posts' );
 
-			if ( ! empty( $this->cached_posts ) ) {
-				$this->cached_posts = array_filter( $this->cached_posts, function ( $post ) {
+			if ( ! empty( $posts ) ) {
+				/** @var WP_Post[] */
+				$this->cached_posts = array_filter( $posts, function ( $post ) {
 					return is_object( $post ) && ! empty( $post->ID );
 				} );
 
@@ -205,10 +213,10 @@ class Advanced_Post_Cache {
 				}
 			}
 
-			$uncached_post_ids = array_diff( $this->all_post_ids, $this->cached_post_ids );
+			$this->uncached_post_ids = array_map( 'absint', array_diff( $this->all_post_ids, $this->cached_post_ids ) );
 
-			$sql = $uncached_post_ids
-				? "SELECT * FROM $wpdb->posts WHERE ID IN (" . join( ',', array_map( 'absint', $uncached_post_ids ) ) . ')'
+			$sql = $this->uncached_post_ids
+				? "SELECT * FROM $wpdb->posts WHERE ID IN (" . join( ', ', $this->uncached_post_ids ) . ')'
 				: '';
 		}
 
@@ -229,7 +237,7 @@ class Advanced_Post_Cache {
 		}
 
 		if ( $this->found_posts && is_array( $this->all_post_ids ) ) { // is cached
-			/** @psalm-var array<object{ID: int}> */
+			/** @psalm-var array<int, WP_Post> */
 			$collated_posts = [];
 			foreach ( $this->cached_posts as $post ) {
 				$posts[] = $post;
@@ -243,7 +251,9 @@ class Advanced_Post_Cache {
 			}
 
 			ksort( $collated_posts );
-			/** @var list<WP_Post> */
+			update_post_cache( $collated_posts );
+
+			/** @psalm-var list<WP_Post> */
 			return array_map( 'get_post', array_values( $collated_posts ) );
 		}
 
