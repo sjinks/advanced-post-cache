@@ -175,7 +175,8 @@ class Advanced_Post_Cache {
 		/** @var wpdb $wpdb */
 		global $wpdb;
 
-		if ( apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
+		/** @psalm-suppress RedundantConditionGivenDocblockType -- SearchWP plugin passes wpdb here */
+		if ( $query instanceof WP_Query && apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
 			return $sql;
 		}
 
@@ -232,7 +233,8 @@ class Advanced_Post_Cache {
 	 * @return WP_Post[]
 	 */
 	public function posts_results( $posts, $query ) {
-		if ( apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
+		/** @psalm-suppress RedundantConditionGivenDocblockType -- SearchWP plugin passes wpdb here */
+		if ( $query instanceof WP_Query && apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
 			return $posts;
 		}
 
@@ -284,7 +286,8 @@ class Advanced_Post_Cache {
 	 * @return string
 	 */
 	public function post_limits_request( $limits, $query ) {
-		if ( apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
+		/** @psalm-suppress RedundantConditionGivenDocblockType -- SearchWP plugin passes wpdb here */
+		if ( $query instanceof WP_Query && apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
 			return $limits;
 		}
 
@@ -309,7 +312,8 @@ class Advanced_Post_Cache {
 	 * @return string
 	 */
 	public function found_posts_query( $sql, $query ) {
-		if ( apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
+		/** @psalm-suppress RedundantConditionGivenDocblockType -- SearchWP plugin passes wpdb here */
+		if ( $query instanceof WP_Query && apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
 			return $sql;
 		}
 
@@ -329,7 +333,8 @@ class Advanced_Post_Cache {
 	 * @return int
 	 */
 	public function found_posts( $found_posts, $query ) {
-		if ( apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
+		/** @psalm-suppress RedundantConditionGivenDocblockType -- SearchWP plugin passes wpdb here */
+		if ( $query instanceof WP_Query && apply_filters( 'advanced_post_cache_skip_for_post_type', false, $query->get( 'post_type' ) ) ) {
 			return $found_posts;
 		}
 
