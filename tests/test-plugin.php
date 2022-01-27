@@ -3,10 +3,7 @@
 class Test_Plugin extends WP_UnitTestCase {
 	private $post_ids;
 
-	/**
-	 * @return void
-	 */
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		$this->post_ids = $this->factory->post->create_many( 15 );
