@@ -18,6 +18,7 @@ jobs:
           - "0"
           - "1"
         wordpress:
+          - "5.8"
           - latest
           - trunk
     services:
