@@ -16,27 +16,15 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[ci skip]')"
     steps:
       - name: Check out source code
-        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # tag=v3
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # tag=v3.0.0
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@d37cc3048580de06099c81ded417530716a0d7ab # tag=v2
+        uses: shivammathur/setup-php@448bd61c6fe9db2113173467e4c22b87ddc2971a # tag=2.18.1
         with:
           php-version: ${{ env.PHP_VERSION }}
 
-      - name: Get composer cache directory
-        id: composer-cache
-        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-
-      - name: Cache Composer packages
-        uses: actions/cache@136d96b4aee02b1f0de3ba493b1d47135042d9c0 # tag=v3.0.1
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-
-
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
+        uses: ramsey/composer-install@2.1.0
 
       - name: Run psalm
         run: composer psalm -- --output-format=github
