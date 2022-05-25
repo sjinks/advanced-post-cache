@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e8cd5765fe891a29046794141eb2d29e",
+    "content-hash": "d05f9ce1992e0464fe7b7ab6b55f087d",
     "packages": [
         {
             "name": "composer/installers",
@@ -4163,16 +4163,16 @@
         },
         {
             "name": "wp-phpunit/wp-phpunit",
-            "version": "5.9.3",
+            "version": "6.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-phpunit/wp-phpunit.git",
-                "reference": "ceece1ed4f2d0732c4a4f2603f4376d85547a50f"
+                "reference": "2a3da5218af4dccdc98a7236e973178a187efe1e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-phpunit/wp-phpunit/zipball/ceece1ed4f2d0732c4a4f2603f4376d85547a50f",
-                "reference": "ceece1ed4f2d0732c4a4f2603f4376d85547a50f",
+                "url": "https://api.github.com/repos/wp-phpunit/wp-phpunit/zipball/2a3da5218af4dccdc98a7236e973178a187efe1e",
+                "reference": "2a3da5218af4dccdc98a7236e973178a187efe1e",
                 "shasum": ""
             },
             "type": "library",
@@ -4207,7 +4207,7 @@
                 "issues": "https://github.com/wp-phpunit/issues",
                 "source": "https://github.com/wp-phpunit/wp-phpunit"
             },
-            "time": "2022-02-22T20:53:17+00:00"
+            "time": "2022-05-25T21:40:09+00:00"
         }
     ],
     "aliases": [],
