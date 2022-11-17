@@ -108,7 +108,7 @@ jobs:
           phpunit --order-by=random ${OPTIONS}
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@d9f34f8cd5cb3b3eb79b3e4b5dae3a16df499a70 # v3
         with:
           files: clover.xml
           flags: unittests
